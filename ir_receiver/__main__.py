@@ -4,7 +4,7 @@
 import argparse
 import time
 import sys
-import IRReceiver
+from ir_receiver.IRReceiver import IRReceiver
 
 try:
     import pigpio

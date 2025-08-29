@@ -10,6 +10,8 @@ elif os.path.exists('/sys/bus/platform/drivers/gpio-x3'):
 else:
     dependencies += ['Jetson.GPIO']
 
+dependencies += ['pigpio']
+
 setup(
     name='rpi-groove-ir-receiver',
     version='1.0.0',
@@ -18,7 +20,7 @@ setup(
     author='Alex Banica',
     author_email='ionut.alexandru.banica@gmail.com',
     python_requires='>=3.9',
-    package_dir={'': 'receiver'},
+    package_dir={'': 'ir_receiver'},
     packages=['rpi-groove-ir-receiver', ''],
     install_requires=dependencies,
     classifiers=[
@@ -26,6 +28,5 @@ setup(
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3.9',
         'Operating System :: POSIX :: Linux',
-        'Topic :: System :: Monitoring',
     ],
 )
