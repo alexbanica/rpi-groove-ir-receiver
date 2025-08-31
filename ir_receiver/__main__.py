@@ -16,7 +16,7 @@ except Exception as e:
 
 def main():
     parser = argparse.ArgumentParser(description="Record IR signals (raw pulses).")
-    parser.add_argument("--in-gpio", type=int, default=17, help="GPIO pin number for IR receiver (BCM)")
+    parser.add_argument("--in-gpio", type=int, default=16, help="GPIO pin number for IR receiver (BCM)")
     parser.add_argument("--out-file", type=str, required=True, help="Output JSON file to save the raw pulses")
     parser.add_argument("--timeout", type=float, default=10.0, help="Max seconds to wait for a signal")
     parser.add_argument("--gap", type=float, default=0.15, help="Gap in seconds to consider burst finished")
@@ -63,7 +63,7 @@ def main():
         except Exception:
             chosen = 0
 
-    pulses = IRReceiver.normalize_pulses(captured[chosen])
+    pulses = IRReceiver.normalize_pulses(captured[chosen], False)
     IRReceiver.save_pulses(args.out_file, args.in_gpio, pulses)
     pi.stop()
     print("Done.")

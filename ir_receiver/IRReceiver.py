@@ -112,19 +112,40 @@ class IRReceiver:
         return recording
 
     @staticmethod
-    def normalize_pulses(pulses: List[int]) -> List[int]:
-        """
-        pigpio callback records durations between edges. We want a list of durations
-        that start with a mark (carrier ON) duration. Depending on receiver polarity
-        and when edges start, the list may need no change or may need to be shifted.
-        This function just ensures integers and returns a copy; protocol-specific
-        normalization (like merging tiny gaps) can be added if needed.
-        """
-        return [int(p) for p in pulses]
+    def normalize_pulses(pulses: List[int], isWithRepeats: bool = True) -> List[int]:
+        if not pulses:
+            return []
 
+        p = [int(x) for x in pulses]
+        merged = []
+        for d in p:
+            if merged and d < 50:
+                merged[-1] += d
+            else:
+                merged.append(d)
+        while merged and merged[-1] > 20000:
+            merged.pop()
+        if not merged:
+            return []
 
-def save_pulses(filename: str, gpio_in: int, pulses: List[int]):
-    data = {"gpio_in": int(gpio_in), "pulse_us": [int(p) for p in pulses]}
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=2)
-    print(f"Saved {len(pulses)} durations to {filename}")
+        def is_short(x): return x < 1000
+        def is_long(x): return x >= 1400
+        if len(merged) >= 2 and is_short(merged[0]) and is_long(merged[1]):
+            merged = merged[1:]
+
+        if not isWithRepeats:
+            merged = IRReceiver.remove_repeats(merged)
+
+        return [int(x) for x in merged]
+
+    @staticmethod
+    def remove_repeats(pulses: List[int]) -> List[int]:
+        #TODO remove repeating pulses
+        return pulses
+
+    @staticmethod
+    def save_pulses(filename: str, gpio_in: int, pulses: List[int]):
+        data = {"gpio_in": int(gpio_in), "pulse_us": [int(p) for p in pulses]}
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"Saved {len(pulses)} durations to {filename}")
