@@ -4,7 +4,6 @@
 import argparse
 import time
 import sys
-import os
 from ir_receiver.IRReceiver import IRReceiver
 
 try:
@@ -25,8 +24,7 @@ def main():
 
     args = parser.parse_args()
 
-    pigpio_host = os.environ.get('PIGPIO_HOST', 'localhost')
-    pi = pigpio.pi(pigpio_host)
+    pi = pigpio.pi()
     if not pi.connected:
         print("Could not connect to pigpio daemon. Start it with: sudo pigpiod")
         sys.exit(2)
