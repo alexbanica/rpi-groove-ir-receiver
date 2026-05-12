@@ -12,6 +12,27 @@ The codebase is aligned to a DDD + Onion style layout.
 - `controllers`: CLI request/response and coordination.
 - `shared/constants`: centralized static strings and numeric thresholds.
 
+Dependencies point inward. `controllers` and `infrastructures` may depend on application/domain contracts, while `domains` must stay independent of CLI parsing, filesystem persistence, pigpio, GPIO, and process-runtime concerns.
+
+### Project-specific architecture
+
+- `ir_receiver/domains/entities`: raw pulse, normalized pulse, and burst model objects.
+- `ir_receiver/domains/dtos`: datastore-free transfer objects for captured output.
+- `ir_receiver/domains/interfaces`: domain-facing contracts; every interface must use the `Interface` suffix.
+- `ir_receiver/applications/services`: capture, burst selection, normalization, and persistence orchestration.
+- `ir_receiver/infrastructures/gpio`: pigpio/GPIO boundary implementations.
+- `ir_receiver/infrastructures/recorders`: concrete pulse capture adapters.
+- `ir_receiver/infrastructures/persistences`: JSON pulse file writing adapters.
+- `ir_receiver/controllers/requests` and `ir_receiver/controllers/responses`: CLI DTOs.
+- `ir_receiver/shared/constants`: default GPIO, gap, timeout, burst, and threshold values.
+
+### Naming standards
+
+- Interfaces are suffixed with `Interface`.
+- Abstract classes are prefixed with `Abstract`.
+- Implementations of abstract classes remove the `Abstract` prefix and keep the remaining name.
+- Service implementations match interface names without suffix.
+
 ### Invariants
 
 The following behavior must remain stable unless a new approved spec changes it:
