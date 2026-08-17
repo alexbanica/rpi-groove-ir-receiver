@@ -102,6 +102,89 @@ python -m unittest discover -s tests -p 'test_*.py'
   - Validate wiring and BCM pin.
   - Increase `--timeout` or adjust `--gap`.
 
+## Maintainer release and publishing workflow
+
+This repository includes two GitHub workflows:
+
+- `.github/workflows/ci.yml`
+  - Runs on `pull_request` targeting `main`.
+  - Runs on `push` to `main`.
+  - Installs Python 3.10 and 3.11.
+  - Runs `ruff check ir_receiver scripts tests setup.py`.
+  - Runs `python -m unittest discover -s tests -p 'test_*.py'`.
+  - Uses `actions/checkout@v7`, `actions/setup-python@v6`, and `requirements-dev.txt`.
+  - Does not receive or expose the publish token.
+- `.github/workflows/publish-forgejo.yml`
+  - Runs only for pushed tags matching:
+    - `X.Y.Z`
+    - `X.Y.Z-betaT` where `T >= 1`
+  - Uses coarse tag globs `"[0-9]*.[0-9]*.[0-9]*"` and
+    `"[0-9]*.[0-9]*.[0-9]*-beta[1-9][0-9]*"` to start the publish path, then
+    applies exact release validation in `scripts.release_version`.
+  - Uses a per-ref non-canceling concurrency group `forgejo-publish-${{ github.ref }}`.
+  - Checks out `${{ github.ref }}` through `actions/checkout@v7` and passes it in `with.ref`.
+  - Uses `actions/checkout@v7`, `actions/setup-python@v6`, installs `requirements-dev.txt`, then runs `python -m scripts.publish_forgejo`.
+  - Provides `RELEASE_TAG` from `${{ github.ref_name }}` and `FORGEJO_PACKAGE_TOKEN` in the publish step environment.
+
+### Supported release tags and PEP 440 mapping
+
+- Stable release tag: `X.Y.Z` -> package version `X.Y.Z`
+- Beta release tag: `X.Y.Z-betaT` -> package version `X.Y.ZbT`
+  Example: `1.2.3-beta1` -> `1.2.3b1`
+
+### Public Forgejo index and install command
+
+- Public index root: `https://forgejo.alexlab.nl/api/packages/public/pypi/simple`
+- Package name: `rpi-groove-ir-receiver`
+- Organization owner: `public`
+- Install from public index with no credentials:
+
+```bash
+python -m pip install --index-url https://forgejo.alexlab.nl/api/packages/public/pypi/simple rpi-groove-ir-receiver==1.2.3b1
+```
+
+Use `--index-url` only; do not add `--extra-index-url`.
+
+### Trusted maintainer publish procedure
+
+1. Ensure you are a trusted maintainer with control over repository Actions secrets.
+2. Create the repository secret `FORGEJO_PACKAGE_TOKEN` as a GitHub Actions secret.
+3. Push a supported tag from trusted maintainer account:
+   - Stable: `git tag 1.2.3`
+   - Beta: `git tag 1.2.3-beta1`
+4. Push the tag: `git push origin <tag>`.
+5. Confirm the tag-triggered `publish-forgejo.yml` run completes. The workflow
+   itself uses coarse tag filters and then relies on exact validation in the
+   publish script.
+6. The workflow validates release behavior, builds artifacts, runs Twine validation,
+   uploads to `https://forgejo.alexlab.nl/api/packages/public/pypi`, and
+   verifies `https://forgejo.alexlab.nl/api/packages/public/pypi/simple` without
+   credentials.
+
+`FORGEJO_PACKAGE_TOKEN` must remain a secret and must not be printed in logs or
+written into files.
+
+### Duplicate version behavior and troubleshooting
+
+- The public package index enforces unique package+version combinations.
+- Republishing an existing distribution version is expected to fail.
+- If publish fails at upload for duplicate/version-conflict reasons, create a new
+  tag with a new supported release version before retrying.
+- If publish fails earlier, use the workflow logs to identify the failed gate:
+  - lint
+  - tests
+  - build
+  - Twine validation
+  - upload
+  - public verification
+
+### Release live-validation boundary
+
+This documentation describes the implemented contract. Live validation is not yet
+claimed from this change unless an authorized release run is completed against
+Forgejo and the resulting package is successfully downloaded from the public index
+without credentials.
+
 ## License
 
 See [LICENSE](LICENSE).

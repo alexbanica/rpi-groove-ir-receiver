@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from setuptools import find_packages, setup
 
@@ -12,10 +13,11 @@ INSTALL_REQUIRES = [
 ]
 
 README_CONTENT = Path("README.md").read_text(encoding="utf-8")
+VERSION = os.getenv("RELEASE_VERSION") or "1.1.0"
 
 setup(
     name="rpi-groove-ir-receiver",
-    version="1.1.0",
+    version=VERSION,
     description="Raspberry Pi Grove IR receiver utilities",
     long_description=README_CONTENT,
     long_description_content_type="text/markdown",
