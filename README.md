@@ -124,7 +124,9 @@ This repository includes two GitHub workflows:
   - Uses a per-ref non-canceling concurrency group `forgejo-publish-${{ github.ref }}`.
   - Checks out `${{ github.ref }}` through `actions/checkout@v7` and passes it in `with.ref`.
   - Uses `actions/checkout@v7`, `actions/setup-python@v6`, installs `requirements-dev.txt`, then runs `python -m scripts.publish_forgejo`.
-  - Provides `RELEASE_TAG` from `${{ github.ref_name }}` and `FORGEJO_PACKAGE_TOKEN` in the publish step environment.
+  - Provides `RELEASE_TAG` from `${{ github.ref_name }}` plus the
+    `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` secrets only in the
+    publish step environment.
 
 ### Supported release tags and PEP 440 mapping
 
@@ -148,7 +150,9 @@ Use `--index-url` only; do not add `--extra-index-url`.
 ### Trusted maintainer publish procedure
 
 1. Ensure you are a trusted maintainer with control over repository Actions secrets.
-2. Create the repository secret `FORGEJO_PACKAGE_TOKEN` as a GitHub Actions secret.
+2. Create the repository secrets `FORGEJO_PACKAGE_USERNAME` and
+   `FORGEJO_PACKAGE_TOKEN` as GitHub Actions secrets. The username is passed
+   only to Twine's upload subprocess; neither value is logged or persisted.
 3. Push a supported tag from trusted maintainer account:
    - Stable: `git tag 1.2.3`
    - Beta: `git tag 1.2.3-beta1`
@@ -161,8 +165,8 @@ Use `--index-url` only; do not add `--extra-index-url`.
    verifies `https://forgejo.alexlab.nl/api/packages/public/pypi/simple` without
    credentials.
 
-`FORGEJO_PACKAGE_TOKEN` must remain a secret and must not be printed in logs or
-written into files.
+`FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` must remain secrets and
+must not be printed in logs or written into files.
 
 ### Duplicate version behavior and troubleshooting
 

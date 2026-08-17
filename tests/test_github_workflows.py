@@ -200,11 +200,12 @@ class GitHubWorkflowsTest(unittest.TestCase):
         self.assertEqual(workflow["concurrency"]["group"], "forgejo-publish-${{ github.ref }}")
         self.assertEqual(workflow["concurrency"]["cancel-in-progress"], "false")
 
-    def test_publish_scopes_token_and_release_tag_to_publish_step_only(self):
+    def test_publish_scopes_credentials_and_release_tag_to_publish_step_only(self):
         workflow_text = _workflow_text(PUBLISH_WORKFLOW)
         _, workflow = _workflow(PUBLISH_WORKFLOW)
 
         self.assertEqual(workflow_text.count("secrets.FORGEJO_PACKAGE_TOKEN"), 1)
+        self.assertEqual(workflow_text.count("secrets.FORGEJO_PACKAGE_USERNAME"), 1)
         steps = _assert_step_blocks(workflow["jobs"]["publish"]["steps"])
         publish_step = _step_by_name(steps, "Publish to Forgejo")
 
@@ -212,6 +213,7 @@ class GitHubWorkflowsTest(unittest.TestCase):
             publish_step.get("env"),
             {
                 "RELEASE_TAG": "${{ github.ref_name }}",
+                "FORGEJO_PACKAGE_USERNAME": "${{ secrets.FORGEJO_PACKAGE_USERNAME }}",
                 "FORGEJO_PACKAGE_TOKEN": "${{ secrets.FORGEJO_PACKAGE_TOKEN }}",
             },
         )

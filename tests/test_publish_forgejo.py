@@ -133,6 +133,7 @@ class PublishForgejoTest(unittest.TestCase):
     def setUp(self):
         self.root = Path(tempfile.mkdtemp())
         self.parent = Path(tempfile.mkdtemp())
+        self.username = "publish-user"
         self.token = "secret-that-must-not-leak"
 
     def tearDown(self):
@@ -179,6 +180,9 @@ class PublishForgejoTest(unittest.TestCase):
         env.update(env_updates)
         if token is None:
             token = env.get("FORGEJO_PACKAGE_TOKEN", self.token)
+        env["FORGEJO_PACKAGE_USERNAME"] = env.get(
+            "FORGEJO_PACKAGE_USERNAME", self.username
+        )
         env["FORGEJO_PACKAGE_TOKEN"] = token
         with patch.dict(os.environ, env, clear=False):
             publish_release(tag, **publish_kwargs)
@@ -195,6 +199,17 @@ class PublishForgejoTest(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(ValueError):
                 self.invoke(tag="1.2.3", runner=runner, token="")
+        self.assertEqual([], runner.calls)
+
+    def test_missing_username_fails_before_any_command(self):
+        runner = FakeRunner()
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(ValueError):
+                self.invoke(
+                    tag="1.2.3",
+                    runner=runner,
+                    FORGEJO_PACKAGE_USERNAME="",
+                )
         self.assertEqual([], runner.calls)
 
     def test_pre_publish_gates_run_in_order_with_project_root_cwd(self):
@@ -338,7 +353,7 @@ class PublishForgejoTest(unittest.TestCase):
             ),
         )
 
-    def test_token_not_in_command_args_or_non_upload_env(self):
+    def test_credentials_are_not_in_command_args_or_non_upload_env(self):
         runner = FakeRunner()
         download = FakeDownload()
         self.invoke(
@@ -354,14 +369,18 @@ class PublishForgejoTest(unittest.TestCase):
         ]
         self.assertEqual(1, len(upload_calls))
         upload_env = upload_calls[0][1]
+        self.assertEqual(self.username, upload_env.get("TWINE_USERNAME"))
         self.assertEqual(self.token, upload_env.get("TWINE_PASSWORD"))
+        self.assertNotIn("FORGEJO_PACKAGE_USERNAME", upload_env)
         self.assertNotIn("FORGEJO_PACKAGE_TOKEN", upload_env)
 
         for command, env, _ in runner.calls:
+            self.assertNotIn("FORGEJO_PACKAGE_USERNAME", env)
             self.assertNotIn("FORGEJO_PACKAGE_TOKEN", env)
             if "twine upload" not in " ".join(command):
+                self.assertNotIn("TWINE_USERNAME", env)
                 self.assertNotIn("TWINE_PASSWORD", env)
-                for field in ("secret", self.token):
+                for field in ("secret", self.username, self.token):
                     self.assertNotIn(field, " ".join(command))
 
     def test_public_verification_uses_downloaded_wheel_only(self):

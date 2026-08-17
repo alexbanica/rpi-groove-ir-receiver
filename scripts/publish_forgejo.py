@@ -14,7 +14,7 @@ from .release_version import parse_release_tag
 
 
 PACKAGE_NAME = "rpi-groove-ir-receiver"
-FORGEJO_USERNAME = "alexbanica"
+FORGEJO_USERNAME_ENV = "FORGEJO_PACKAGE_USERNAME"
 FORGEJO_UPLOAD_URL = "https://forgejo.alexlab.nl/api/packages/public/pypi"
 FORGEJO_PUBLIC_INDEX_URL = (
     "https://forgejo.alexlab.nl/api/packages/public/pypi/simple"
@@ -58,6 +58,7 @@ DISALLOWED_DISTRIBUTION_PATHS = (
 
 def _run_clean_env(base: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     env = dict(os.environ if base is None else base)
+    env.pop(FORGEJO_USERNAME_ENV, None)
     env.pop("TWINE_PASSWORD", None)
     env.pop("FORGEJO_PACKAGE_TOKEN", None)
     return env
@@ -123,7 +124,10 @@ def publish_release(
     temp_parent: Optional[Path] = None,
 ) -> None:
     tag_data = parse_release_tag(tag)
+    username = os.environ.get(FORGEJO_USERNAME_ENV)
     token = os.environ.get("FORGEJO_PACKAGE_TOKEN")
+    if not username:
+        raise ValueError(f"{FORGEJO_USERNAME_ENV} is required")
     if not token:
         raise ValueError("FORGEJO_PACKAGE_TOKEN is required")
 
@@ -189,6 +193,7 @@ def publish_release(
         )
 
         upload_env = _run_clean_env()
+        upload_env["TWINE_USERNAME"] = username
         upload_env["TWINE_PASSWORD"] = token
         upload_command = [
             sys.executable,
@@ -196,8 +201,6 @@ def publish_release(
             "twine",
             "upload",
             "--non-interactive",
-            "--username",
-            FORGEJO_USERNAME,
             "--repository-url",
             FORGEJO_UPLOAD_URL,
             str(wheel_path),
