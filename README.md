@@ -109,7 +109,7 @@ This repository includes two GitHub workflows:
 - `.github/workflows/ci.yml`
   - Runs on `pull_request` targeting `main`.
   - Runs on `push` to `main`.
-  - Installs Python 3.9, 3.10, and 3.11.
+  - Installs Python 3.10 and 3.11.
   - Runs `ruff check ir_receiver scripts tests setup.py`.
   - Runs `python -m unittest discover -s tests -p 'test_*.py'`.
   - Uses `actions/checkout@v7`, `actions/setup-python@v6`, and `requirements-dev.txt`.

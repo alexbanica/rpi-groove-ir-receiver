@@ -111,6 +111,13 @@ class GitHubWorkflowsTest(unittest.TestCase):
         _assert_mapping(workflow.get("permissions"), "workflow.permissions")
         self.assertEqual(workflow["permissions"], {"contents": "read"})
 
+    def test_ci_uses_python_3_10_and_3_11_without_a_3_9_job(self):
+        _, workflow = _workflow(CI_WORKFLOW)
+
+        matrix = workflow["jobs"]["test"]["strategy"]["matrix"]
+        self.assertEqual(matrix["python-version"], ["3.10", "3.11"])
+        self.assertNotIn("3.9", matrix["python-version"])
+
     def test_ci_job_and_step_structure(self):
         _, workflow = _workflow(CI_WORKFLOW)
 
