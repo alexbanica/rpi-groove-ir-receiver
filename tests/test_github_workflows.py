@@ -6,7 +6,7 @@ import yaml
 
 WORKFLOW_DIR = Path(__file__).parents[1] / ".github" / "workflows"
 CI_WORKFLOW = WORKFLOW_DIR / "ci.yml"
-PUBLISH_WORKFLOW = WORKFLOW_DIR / "publish-forgejo.yml"
+PUBLISH_WORKFLOW = WORKFLOW_DIR / "publish.yml"
 
 ALLOWED_STEP_KEYS = {
     "name",
@@ -77,13 +77,13 @@ def _assert_step_blocks(steps):
         if "run" not in step and "uses" not in step:
             raise AssertionError(f"workflow step {step['name']} missing action or shell command")
 
-        if step["name"] == "Ruff lint":
+        if step["name"] == "Lint":
             if "ruff check" not in step.get("run", ""):
-                raise AssertionError("Ruff lint step is missing ruff check command")
+                raise AssertionError("Lint step is missing ruff check command")
 
-        if step["name"] == "Unit tests":
+        if step["name"] == "Test":
             if "python -m unittest discover -s tests -p 'test_*.py'" not in step.get("run", ""):
-                raise AssertionError("Unit tests step is missing test command")
+                raise AssertionError("Test step is missing test command")
 
     return steps
 
@@ -131,9 +131,9 @@ class GitHubWorkflowsTest(unittest.TestCase):
             [
                 "Checkout repository",
                 "Set up Python",
-                "Install release tooling",
-                "Ruff lint",
-                "Unit tests",
+                "Install dependencies",
+                "Lint",
+                "Test",
             ],
         )
 
@@ -148,9 +148,9 @@ class GitHubWorkflowsTest(unittest.TestCase):
             [
                 "Checkout repository",
                 "Set up Python",
-                "Install release tooling",
-                "Ruff lint",
-                "Unit tests",
+                "Install dependencies",
+                "Lint",
+                "Test",
             ],
         )
 
@@ -184,7 +184,10 @@ class GitHubWorkflowsTest(unittest.TestCase):
         steps = _assert_step_blocks(workflow["jobs"]["publish"]["steps"])
 
         checkout_step = _step_by_name(steps, "Checkout tagged ref")
-        self.assertEqual(checkout_step.get("uses"), "actions/checkout@v7")
+        self.assertEqual(
+            checkout_step.get("uses"),
+            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        )
         self.assertEqual(checkout_step.get("with", {}).get("ref"), "${{ github.ref }}")
 
     def test_publish_has_read_only_permissions_job_scope(self):
@@ -197,7 +200,10 @@ class GitHubWorkflowsTest(unittest.TestCase):
         _, workflow = _workflow(PUBLISH_WORKFLOW)
 
         _assert_mapping(workflow.get("concurrency"), "workflow.concurrency")
-        self.assertEqual(workflow["concurrency"]["group"], "forgejo-publish-${{ github.ref }}")
+        self.assertEqual(
+            workflow["concurrency"]["group"],
+            "${{ github.workflow }}-${{ github.ref }}",
+        )
         self.assertEqual(workflow["concurrency"]["cancel-in-progress"], "false")
 
     def test_publish_scopes_credentials_and_release_tag_to_publish_step_only(self):
