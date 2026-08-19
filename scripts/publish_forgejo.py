@@ -19,6 +19,7 @@ FORGEJO_UPLOAD_URL = "https://forgejo.alexlab.nl/api/packages/public/pypi"
 FORGEJO_PUBLIC_INDEX_URL = (
     "https://forgejo.alexlab.nl/api/packages/public/pypi/simple"
 )
+PYPI_PUBLIC_INDEX_URL = "https://pypi.org/simple"
 
 REQUIRED_DISTRIBUTION_PATHS = ("ir_receiver/__init__.py",)
 DISALLOWED_DISTRIBUTION_PATHS = (
@@ -210,6 +211,26 @@ def publish_release(
 
         download_dir = release_dir / "verify"
         download_dir.mkdir(parents=True)
+
+        install_dir = release_dir / "install"
+        install_command = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-cache-dir",
+            "--no-input",
+            "--only-binary",
+            PACKAGE_NAME,
+            "--index-url",
+            FORGEJO_PUBLIC_INDEX_URL,
+            "--extra-index-url",
+            PYPI_PUBLIC_INDEX_URL,
+            "--target",
+            str(install_dir),
+            "{}=={}".format(PACKAGE_NAME, tag_data.distribution_version),
+        ]
+        run(install_command, env=_run_clean_env(), cwd=root)
 
         download_command = [
             sys.executable,

@@ -146,10 +146,14 @@ This repository includes two GitHub workflows:
 - Install from public index with no credentials:
 
 ```bash
-python -m pip install --index-url https://forgejo.alexlab.nl/api/packages/public/pypi/simple rpi-groove-ir-receiver==1.2.3b1
+python -m pip install \
+  --index-url https://forgejo.alexlab.nl/api/packages/public/pypi/simple \
+  --extra-index-url https://pypi.org/simple \
+  rpi-groove-ir-receiver==1.2.3b1
 ```
 
-Use `--index-url` only; do not add `--extra-index-url`.
+Forgejo supplies `rpi-groove-ir-receiver`; the additional public PyPI index
+supplies its third-party dependencies, which are not published in Forgejo.
 
 ### Trusted maintainer publish procedure
 
@@ -166,8 +170,9 @@ Use `--index-url` only; do not add `--extra-index-url`.
    publish script.
 6. The workflow validates release behavior, builds artifacts, runs Twine validation,
    uploads to `https://forgejo.alexlab.nl/api/packages/public/pypi`, and
-   verifies `https://forgejo.alexlab.nl/api/packages/public/pypi/simple` without
-   credentials.
+   anonymously installs the exact package version from Forgejo while resolving
+   third-party dependencies from public PyPI, then verifies the downloaded
+   Forgejo wheel metadata without credentials.
 
 `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` must remain secrets and
 must not be printed in logs or written into files.
