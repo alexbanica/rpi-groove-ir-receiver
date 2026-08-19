@@ -86,7 +86,11 @@ Output JSON schema remains:
 
 ## Development
 
-Run tests:
+The package declares Python 3.9+ runtime compatibility. Repository CI currently
+runs on Python 3.10 and 3.11.
+
+Automated tests are intentionally limited to deterministic pulse normalization
+and burst-selection domain behavior. Run the maintained suite with:
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py'
@@ -132,11 +136,22 @@ This repository includes two GitHub workflows:
     `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` secrets only in the
     publish step environment.
 
+The workflows use read-only repository permissions, do not persist checkout
+credentials, and use per-workflow/per-ref concurrency. Superseded CI runs are
+canceled; an in-progress publish for a tag is never canceled. Dependabot groups
+GitHub Actions updates on a weekly schedule.
+
 ### Supported release tags and PEP 440 mapping
 
 - Stable release tag: `X.Y.Z` -> package version `X.Y.Z`
 - Beta release tag: `X.Y.Z-betaT` -> package version `X.Y.ZbT`
   Example: `1.2.3-beta1` -> `1.2.3b1`
+
+Versions are derived from the tag in the ephemeral build environment; the
+static version in `setup.py` does not need to match the release tag and is not
+rewritten or pushed. Tags with a leading `v`, missing components, leading
+zeroes, `beta0`, dotted beta numbers, other prerelease suffixes, whitespace, or
+build metadata are rejected before build or authentication.
 
 ### Public Forgejo index and install command
 
@@ -183,6 +198,12 @@ supplies its third-party dependencies, which are not published in Forgejo.
 `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` must remain secrets and
 must not be printed in logs or written into files.
 
+The publisher removes both Forgejo variables from child-process environments.
+Only the Twine upload process receives their values, mapped to
+`TWINE_USERNAME` and `TWINE_PASSWORD`. Pull-request and branch CI never receive
+the publish credentials. Temporary release artifacts are removed after success
+or failure without replacing the original command failure.
+
 Dependabot groups weekly GitHub Actions updates so immutable pins can be
 refreshed consistently with the other Python repositories.
 
@@ -202,10 +223,17 @@ refreshed consistently with the other Python repositories.
 
 ### Release live-validation boundary
 
-This documentation describes the implemented contract. Live validation is not yet
-claimed from this change unless an authorized release run is completed against
-Forgejo and the resulting package is successfully downloaded from the public index
-without credentials.
+The CI and release workflows, exact tag parser, build and artifact checks,
+credential isolation, Forgejo upload, anonymous dependency-resolving install,
+and exact wheel verification are implemented. Non-domain workflow, packaging,
+and release-tool tests were intentionally removed under the repository's
+domain-only automated-test policy; those areas require static, build, hosted,
+live-registry, and operator validation.
+
+Hosted GitHub Actions execution and a live authenticated Forgejo upload followed
+by anonymous install/download are not claimed as verified by the documentation
+cleanup. Treat release readiness as unverified until a trusted supported tag run
+completes those checks successfully.
 
 ## License
 
