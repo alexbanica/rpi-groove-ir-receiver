@@ -146,6 +146,12 @@ This repository includes two GitHub workflows:
 - Install from public index with no credentials:
 
 ```bash
+sed -i \
+  's/^include-system-site-packages = false$/include-system-site-packages = true/' \
+  ~/.venv/pyvenv.cfg
+```
+
+```bash
 python -m pip install \
   --index-url https://forgejo.alexlab.nl/api/packages/public/pypi/simple \
   --extra-index-url https://pypi.org/simple \
