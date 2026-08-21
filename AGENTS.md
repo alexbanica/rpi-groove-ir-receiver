@@ -77,3 +77,33 @@ python -m unittest discover -s tests -p 'test_*.py'
 ### API docs scope
 
 No HTTP API exists. OpenAPI and `.http` artifacts are not applicable for the current project scope.
+
+## Packaging and release invariants
+
+- The package is named `rpi-groove-ir-receiver`, supports Python 3.9 and newer,
+  and is published to the public Forgejo organization through
+  `https://forgejo.alexlab.nl/api/packages/public/pypi`.
+- Release versions come exclusively from exact pushed tags. Stable tags use
+  `X.Y.Z`; beta tags use `X.Y.Z-betaT` with `T >= 1` and map to the PEP 440
+  version `X.Y.ZbT`. A leading `v`, whitespace, leading zeroes, missing version
+  components, `beta0`, dotted beta numbers, arbitrary prerelease suffixes, and
+  build metadata are invalid.
+- A release-time version override is ephemeral. Release automation must not
+  edit or push repository version files, create tags, or overwrite an existing
+  package version.
+- Before upload, the publisher must validate the tag, lint, run the maintained
+  domain test suite, build a wheel and source distribution, run Twine checks,
+  and inspect artifact identity, version, required content, and disallowed
+  credential or generated content. Any failed gate prevents upload.
+- `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` are tag-publish secrets.
+  They must not be available to pull-request or branch CI. Child processes are
+  credential-clean except for the Twine upload process, which receives the
+  values as `TWINE_USERNAME` and `TWINE_PASSWORD`.
+- Temporary release material must be removed after success or failure without
+  hiding the original failure. After upload, the exact version must install
+  anonymously from Forgejo, with public PyPI used only to resolve third-party
+  dependencies, and the downloaded Forgejo wheel must pass metadata and content
+  validation.
+- Non-domain release and workflow behavior is validated with static, syntax,
+  build, hosted, live-registry, and operator checks rather than automated tests,
+  in accordance with the domain-only test policy.
