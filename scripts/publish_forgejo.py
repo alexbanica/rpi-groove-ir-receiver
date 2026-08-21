@@ -16,10 +16,9 @@ from .release_version import parse_release_tag
 PACKAGE_NAME = "rpi-groove-ir-receiver"
 FORGEJO_USERNAME_ENV = "FORGEJO_PACKAGE_USERNAME"
 FORGEJO_UPLOAD_URL = "https://forgejo.alexlab.nl/api/packages/public/pypi"
-FORGEJO_PUBLIC_INDEX_URL = (
-    "https://forgejo.alexlab.nl/api/packages/public/pypi/simple"
-)
-PYPI_PUBLIC_INDEX_URL = "https://pypi.org/simple"
+CLIENT_INDEX_URL = "https://pypi.alexlab.nl/simple/"
+# Backward-compatible import name; clients use the sole routed index above.
+FORGEJO_PUBLIC_INDEX_URL = CLIENT_INDEX_URL
 
 REQUIRED_DISTRIBUTION_PATHS = ("ir_receiver/__init__.py",)
 DISALLOWED_DISTRIBUTION_PATHS = (
@@ -223,9 +222,7 @@ def publish_release(
             "--only-binary",
             PACKAGE_NAME,
             "--index-url",
-            FORGEJO_PUBLIC_INDEX_URL,
-            "--extra-index-url",
-            PYPI_PUBLIC_INDEX_URL,
+            CLIENT_INDEX_URL,
             "--target",
             str(install_dir),
             "{}=={}".format(PACKAGE_NAME, tag_data.distribution_version),
@@ -241,7 +238,7 @@ def publish_release(
             "--dest",
             str(download_dir),
             "--index-url",
-            FORGEJO_PUBLIC_INDEX_URL,
+            CLIENT_INDEX_URL,
             "{}=={}".format(PACKAGE_NAME, tag_data.distribution_version),
         ]
         download(download_command, env=_run_clean_env(), cwd=root)

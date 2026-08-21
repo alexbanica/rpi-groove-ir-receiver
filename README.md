@@ -147,6 +147,7 @@ GitHub Actions updates on a weekly schedule.
 - Beta release tag: `X.Y.Z-betaT` -> package version `X.Y.ZbT`
   Example: `1.2.3-beta1` -> `1.2.3b1`
 
+### Routed client index and install command
 Versions are derived from the tag in the ephemeral build environment; the
 static version in `setup.py` does not need to match the release tag and is not
 rewritten or pushed. Tags with a leading `v`, missing components, leading
@@ -155,10 +156,10 @@ build metadata are rejected before build or authentication.
 
 ### Public Forgejo index and install command
 
-- Public index root: `https://forgejo.alexlab.nl/api/packages/public/pypi/simple`
+- Client index root: `https://pypi.alexlab.nl/simple/`
 - Package name: `rpi-groove-ir-receiver`
 - Organization owner: `public`
-- Install from public index with no credentials:
+- Install with no credentials:
 
 ```bash
 sed -i \
@@ -168,13 +169,13 @@ sed -i \
 
 ```bash
 python -m pip install \
-  --index-url https://forgejo.alexlab.nl/api/packages/public/pypi/simple \
-  --extra-index-url https://pypi.org/simple \
+  --index-url https://pypi.alexlab.nl/simple/ \
   rpi-groove-ir-receiver==1.2.3b1
 ```
 
-Forgejo supplies `rpi-groove-ir-receiver`; the additional public PyPI index
-supplies its third-party dependencies, which are not published in Forgejo.
+The routed client index serves `rpi-groove-ir-receiver` from Forgejo and
+automatically resolves third-party dependencies through its cached PyPI route.
+Publish uploads remain directed to Forgejo.
 
 ### Trusted maintainer publish procedure
 
@@ -191,9 +192,9 @@ supplies its third-party dependencies, which are not published in Forgejo.
    publish script.
 6. The workflow validates release behavior, builds artifacts, runs Twine validation,
    uploads to `https://forgejo.alexlab.nl/api/packages/public/pypi`, and
-   anonymously installs the exact package version from Forgejo while resolving
-   third-party dependencies from public PyPI, then verifies the downloaded
-   Forgejo wheel metadata without credentials.
+   anonymously installs and downloads the exact package version through
+   `https://pypi.alexlab.nl/simple/`, then verifies its wheel metadata without
+   credentials.
 
 `FORGEJO_PACKAGE_USERNAME` and `FORGEJO_PACKAGE_TOKEN` must remain secrets and
 must not be printed in logs or written into files.
